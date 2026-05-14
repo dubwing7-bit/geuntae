@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>장애인일자리 근태관리</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f4f5f7;--surface:#fff;--surface2:#f8f9fc;--border:#e2e5ec;
+  --text:#1a1d23;--muted:#6b7280;--accent:#2563eb;--accent-light:#eff6ff;
+  --green:#16a34a;--green-light:#f0fdf4;--amber:#d97706;--amber-light:#fffbeb;
+  --red:#dc2626;--red-light:#fef2f2;--sick:#7c3aed;--sick-light:#f5f3ff;
+  --radius:10px;--shadow:0 1px 4px rgba(0,0,0,.07),0 4px 16px rgba(0,0,0,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;}
+
+/* ── 로그인 ── */
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1e3a8a,#2563eb,#3b82f6);}
+.login-box{background:var(--surface);border-radius:16px;padding:40px 36px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.login-logo{text-align:center;margin-bottom:28px;}
+.login-logo h1{font-size:18px;font-weight:700;margin-top:12px;}
+.login-logo p{font-size:12px;color:var(--muted);margin-top:4px;}
+.login-icon{width:52px;height:52px;border-radius:14px;background:var(--accent);display:inline-flex;align-items:center;justify-content:center;}
+.login-icon svg{width:28px;height:28px;fill:#fff;}
+.role-tabs{display:flex;gap:4px;background:var(--surface2);border-radius:8px;padding:3px;margin-bottom:20px;}
+.role-tab{flex:1;text-align:center;padding:8px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--muted);transition:all .15s;font-family:inherit;}
+.role-tab.active{background:var(--surface);color:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.1);}
+.lf label{font-size:12px;font-weight:500;color:var(--muted);display:block;margin-bottom:6px;}
+.lf input{width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:14px;font-family:inherit;outline:none;transition:border .15s;margin-bottom:14px;}
+.lf input:focus{border-color:var(--accent);}
+.login-btn{width:100%;padding:12px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:14px;font-weight:500;font-family:inherit;cursor:pointer;transition:background .15s;}
+.login-btn:hover{background:#1d4ed8;}
+.login-error{color:var(--red);font-size:12px;text-align:center;margin-top:10px;min-height:18px;}
+.login-hint{font-size:11px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.6;}
+
+/* ── 앱 ── */
+#appScreen{display:none;}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;}
+.logo{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);}
+.role-badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500;}
+.role-badge.admin{background:#fef3c7;color:#92400e;}
+.role-badge.participant{background:var(--accent-light);color:var(--accent);}
+.header-right{display:flex;align-items:center;gap:10px;}
+.user-name{font-size:13px;font-weight:500;}
+.today-badge{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);background:var(--surface2);border:1px solid var(--border);padding:4px 10px;border-radius:20px;}
+.logout-btn{padding:6px 12px;border-radius:7px;font-size:12px;font-weight:500;font-family:inherit;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .15s;}
+.logout-btn:hover{background:var(--red-light);color:var(--red);border-color:#fca5a5;}
+
+/* ── 탭·레이아웃 ── */
+.container{max-width:1100px;margin:0 auto;padding:24px 16px;}
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin-bottom:20px;width:fit-content;flex-wrap:wrap;}
+.tab{padding:7px 18px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--muted);transition:all .15s;white-space:nowrap;font-family:inherit;}
+.tab.active{background:var(--accent);color:#fff;}
+.tab:hover:not(.active){background:var(--surface2);color:var(--text);}
+.page{display:none;}.page.active{display:block;}
+
+/* ── 공통 ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);margin-bottom:16px;}
+.card-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;box-shadow:var(--shadow);}
+.stat-label{font-size:12px;color:var(--muted);margin-bottom:6px;}
+.stat-value{font-size:28px;font-weight:700;font-family:'IBM Plex Mono',monospace;}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:4px;}
+.stat-card.blue .stat-value{color:var(--accent);}
+.stat-card.green .stat-value{color:var(--green);}
+.stat-card.amber .stat-value{color:var(--amber);}
+.stat-card.purple .stat-value{color:var(--sick);}
+
+select,input[type=text],input[type=date],input[type=number],input[type=month],input[type=password],textarea{border:1px solid var(--border);border-radius:7px;padding:8px 12px;font-size:13px;font-family:inherit;color:var(--text);background:var(--surface);outline:none;transition:border .15s;}
+select:focus,input:focus,textarea:focus{border-color:var(--accent);}
+textarea{resize:vertical;min-height:80px;width:100%;}
+.btn{padding:8px 16px;border-radius:7px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;border:none;transition:all .15s;}
+.btn-primary{background:var(--accent);color:#fff;}.btn-primary:hover{background:#1d4ed8;}
+.btn-danger{background:var(--red-light);color:var(--red);border:1px solid #fca5a5;}.btn-danger:hover{background:#fee2e2;}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);}.btn-ghost:hover{background:var(--surface2);}
+
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:var(--surface2);padding:10px 14px;text-align:left;font-weight:500;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:10px 14px;border-bottom:1px solid var(--border);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface2);}
+
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:500;}
+.badge-annual{background:var(--accent-light);color:var(--accent);}
+.badge-sick{background:var(--sick-light);color:var(--sick);}
+.badge-public{background:var(--green-light);color:var(--green);}
+.badge-special{background:var(--amber-light);color:var(--amber);}
+.badge-ok{background:var(--green-light);color:var(--green);}
+.badge-warn{background:var(--amber-light);color:var(--amber);}
+.badge-deny{background:var(--red-light);color:var(--red);}
+.badge-review{background:#f3f4f6;color:var(--muted);}
+
+.prog-wrap{background:var(--border);border-radius:4px;height:6px;overflow:hidden;}
+.prog-bar{height:100%;border-radius:4px;transition:width .4s;}
+.prog-blue{background:var(--accent);}
+
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;}
+.form-group{display:flex;flex-direction:column;gap:6px;}
+.form-group label{font-size:12px;font-weight:500;color:var(--muted);}
+
+.toast{position:fixed;bottom:24px;right:24px;background:var(--text);color:#fff;padding:12px 20px;border-radius:var(--radius);font-size:13px;z-index:9999;opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+
+/* ── 업무일지 ── */
+.diary-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+.diary-nav{display:flex;align-items:center;gap:8px;}
+.diary-nav button{width:30px;height:30px;border-radius:50%;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:inherit;}
+.diary-nav button:hover{background:var(--surface2);}
+.diary-date-display{font-size:15px;font-weight:500;min-width:180px;text-align:center;}
+.diary-entry{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:10px;box-shadow:var(--shadow);}
+.diary-entry-date{font-size:12px;color:var(--muted);margin-bottom:8px;font-family:'IBM Plex Mono',monospace;}
+.diary-entry-content{font-size:14px;line-height:1.8;white-space:pre-wrap;}
+.diary-actions{display:flex;gap:8px;margin-top:10px;}
+
+/* ── 참여자 카드 ── */
+.p-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;box-shadow:var(--shadow);}
+.p-avatar{width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;}
+.p-info{flex:1;min-width:120px;}
+.p-name{font-size:14px;font-weight:500;}
+.p-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.p-stats{display:flex;gap:16px;}
+.p-stat{text-align:center;}
+.p-stat-val{font-size:16px;font-weight:700;font-family:'IBM Plex Mono',monospace;}
+.p-stat-lbl{font-size:10px;color:var(--muted);margin-top:1px;}
+
+/* ── 내 현황 ── */
+.my-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.leave-block{background:var(--surface2);border-radius:var(--radius);padding:16px;}
+.leave-block-title{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:10px;}
+.leave-num{font-size:32px;font-weight:700;font-family:'IBM Plex Mono',monospace;}
+.leave-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+
+/* ── 권한 관리 ── */
+.code-item{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface2);border-radius:8px;margin-bottom:8px;gap:12px;flex-wrap:wrap;}
+.code-value{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;background:var(--surface);border:1px solid var(--border);padding:4px 12px;border-radius:6px;color:var(--accent);letter-spacing:2px;}
+
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px;}
+.empty-state .icon{font-size:32px;margin-bottom:10px;}
+
+@media(max-width:600px){
+  .summary-grid{grid-template-columns:repeat(2,1fr);}
+  .form-grid{grid-template-columns:1fr;}
+  .p-stats{display:none;}
+  .my-grid{grid-template-columns:1fr;}
+  .today-badge{display:none;}
+  header{padding:0 12px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ 로그인 ══ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-icon">
+        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg>
+      </div>
+      <h1>장애인일자리 근태관리</h1>
+      <p>홍천군</p>
+    </div>
+    <div class="role-tabs">
+      <button class="role-tab active" onclick="setLoginRole('participant')">👤 참여자</button>
+      <button class="role-tab" onclick="setLoginRole('admin')">🔑 관리자</button>
+    </div>
+    <div class="lf">
+      <div id="nameGroup">
+        <label>이름</label>
+        <input type="text" id="loginName" placeholder="홍길동">
+      </div>
+      <label>접속 코드</label>
+      <input type="password" id="loginCode" placeholder="코드 입력" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="login-btn" onclick="doLogin()">접속하기</button>
+      <div class="login-error" id="loginError"></div>
+      <div class="login-hint" id="loginHint">이름과 참여자 코드로 접속하세요.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 앱 ══ -->
+<div id="appScreen">
+  <header>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="logo"><div class="logo-dot"></div>근태관리</div>
+      <span class="role-badge" id="roleBadge"></span>
+    </div>
+    <div class="header-right">
+      <span class="user-name" id="headerUserName"></span>
+      <span class="today-badge" id="todayBadge"></span>
+      <button class="logout-btn" onclick="doLogout()">로그아웃</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="tabs" id="tabBar"></div>
+
+    <!-- 관리자: 대시보드 -->
+    <div id="page-dashboard" class="page">
+      <div class="summary-grid" id="summaryCards"></div>
+      <div class="card">
+        <div class="card-title">참여자별 현황</div>
+        <div id="participantList" style="display:flex;flex-direction:column;gap:10px;"></div>
+      </div>
+    </div>
+
+    <!-- 관리자: 참여자 관리 -->
+    <div id="page-participants" class="page">
+      <div class="card">
+        <div class="card-title">참여자 추가</div>
+        <div class="form-grid">
+          <div class="form-group"><label>성명 *</label><input type="text" id="p-name" placeholder="박주영"></div>
+          <div class="form-group"><label>사업유형</label>
+            <select id="p-type"><option>장애인일자리</option><option>복지일자리</option><option>특화형일자리</option></select></div>
+          <div class="form-group"><label>근무지</label><input type="text" id="p-workplace"></div>
+          <div class="form-group"><label>연락처</label><input type="text" id="p-contact" placeholder="010-0000-0000"></div>
+          <div class="form-group"><label>근무 시작일 *</label><input type="date" id="p-start"></div>
+          <div class="form-group"><label>계약 종료일</label><input type="date" id="p-end" value="2026-12-31"></div>
+          <div class="form-group"><label>일일 근무시간</label>
+            <select id="p-hours"><option value="4">4시간(시간제)</option><option value="5">5시간(특화형)</option><option value="8" selected>8시간(전일제)</option></select></div>
+          <div class="form-group"><label>참여자 접속코드 *</label><input type="text" id="p-code" placeholder="예: 1234"></div>
+        </div>
+        <div style="margin-top:16px;"><button class="btn btn-primary" onclick="addParticipant()">참여자 추가</button></div>
+      </div>
+      <div class="card">
+        <div class="card-title">등록된 참여자</div>
+        <div class="table-wrap">
+          <table><thead><tr>
+            <th>성명</th><th>유형</th><th>근무지</th><th>시작일</th>
+            <th>연가발생</th><th>연가사용</th><th>연가잔여</th>
+            <th>병가사용</th><th>병가잔여</th><th>증빙없이잔여</th>
+            <th>접속코드</th><th>삭제</th>
+          </tr></thead>
+          <tbody id="pTableBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 관리자: 근태 입력 -->
+    <div id="page-attendance" class="page">
+      <div class="card">
+        <div class="card-title">근태 입력</div>
+        <div class="form-grid">
+          <div class="form-group"><label>참여자 *</label><select id="a-name" onchange="updateLeaveWarning()"></select></div>
+          <div class="form-group"><label>근태 종류 *</label>
+            <select id="a-type" onchange="updateLeaveWarning()"><option>연가</option><option>병가</option><option>공가</option><option>특별휴가</option></select></div>
+          <div class="form-group"><label>시작일 *</label><input type="date" id="a-start"></div>
+          <div class="form-group"><label>종료일 *</label><input type="date" id="a-end"></div>
+          <div class="form-group"><label>일수</label><input type="number" id="a-days" min="1" value="1"></div>
+          <div class="form-group"><label>시간(h)</label><input type="number" id="a-hours" min="1" max="8" value="4"></div>
+          <div class="form-group" style="grid-column:1/-1;"><label>사유</label><textarea id="a-reason" placeholder="개인 사정"></textarea></div>
+          <div class="form-group"><label>증빙서류</label><input type="text" id="a-docs" placeholder="없음 / 진단서 등"></div>
+          <div class="form-group"><label>처리상태</label>
+            <select id="a-status"><option>승인</option><option>검토중</option><option>반려</option></select></div>
+        </div>
+        <div id="leaveWarning" style="margin-top:12px;display:none;"></div>
+        <div style="margin-top:16px;display:flex;gap:10px;">
+          <button class="btn btn-primary" onclick="addAttendance()">저장</button>
+          <button class="btn btn-ghost" onclick="resetAForm()">초기화</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">전체 근태 이력</div>
+        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+          <select id="rf-name" style="width:140px;" onchange="renderAdminRecords()"><option value="">전체 참여자</option></select>
+          <select id="rf-type" style="width:130px;" onchange="renderAdminRecords()"><option value="">전체 종류</option><option>연가</option><option>병가</option><option>공가</option><option>특별휴가</option></select>
+          <button class="btn btn-ghost" onclick="exportCSV()">⬇️ CSV</button>
+        </div>
+        <div class="table-wrap">
+          <table><thead><tr>
+            <th>성명</th><th>종류</th><th>시작일</th><th>종료일</th><th>일수</th><th>시간</th><th>사유</th><th>처리상태</th><th>삭제</th>
+          </tr></thead><tbody id="adminRecordBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 관리자: 업무일지 열람 -->
+    <div id="page-admin-diary" class="page">
+      <div class="card">
+        <div class="card-title">업무일지 열람</div>
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+          <select id="adf-name" style="width:160px;" onchange="renderAdminDiary()"><option value="">전체 참여자</option></select>
+          <input type="month" id="adf-month" style="width:160px;" onchange="renderAdminDiary()">
+        </div>
+        <div id="adminDiaryList"></div>
+      </div>
+    </div>
+
+    <!-- 관리자: 권한 관리 -->
+    <div id="page-settings" class="page">
+      <div class="card">
+        <div class="card-title">관리자 코드 변경</div>
+        <div class="form-grid">
+          <div class="form-group"><label>현재 코드</label><input type="password" id="cur-admin-code" placeholder="현재 관리자 코드"></div>
+          <div class="form-group"><label>새 코드</label><input type="password" id="new-admin-code" placeholder="새 코드 (4자리 이상)"></div>
+        </div>
+        <div style="margin-top:14px;"><button class="btn btn-primary" onclick="changeAdminCode()">코드 변경</button></div>
+      </div>
+      <div class="card">
+        <div class="card-title">참여자 접속 코드 관리</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">참여자에게 개별 코드를 알려주세요. 코드는 언제든 변경 가능합니다.</p>
+        <div id="codeList"></div>
+      </div>
+    </div>
+
+    <!-- 참여자: 내 현황 -->
+    <div id="page-my-status" class="page">
+      <div class="my-grid" id="myLeaveGrid"></div>
+      <div class="card">
+        <div class="card-title">연가 발생 현황</div>
+        <div id="myTimeline" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">내 근태 이력</div>
+        <div class="table-wrap">
+          <table><thead><tr><th>종류</th><th>시작일</th><th>종료일</th><th>일수</th><th>사유</th><th>처리상태</th></tr></thead>
+          <tbody id="myRecordBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 참여자: 업무일지 -->
+    <div id="page-diary" class="page">
+      <div class="card">
+        <div class="diary-header">
+          <div class="diary-nav">
+            <button onclick="moveDiaryDate(-1)">◀</button>
+            <div class="diary-date-display" id="diaryDateDisplay"></div>
+            <button onclick="moveDiaryDate(1)">▶</button>
+          </div>
+          <button class="btn btn-ghost" onclick="setDiaryDate(new Date())">오늘</button>
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>업무 내용</label>
+          <textarea id="diaryInput" placeholder="오늘 한 일을 자유롭게 입력하세요..." style="min-height:140px;"></textarea>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-primary" onclick="saveDiary()">저장</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('diaryInput').value=''">지우기</button>
+        </div>
+      </div>
+    <!-- 양식 출력 (관리자·참여자 공통) -->
+    <div id="page-print" class="page">
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title">양식 선택 및 출력</div>
+        <div class="form-grid" style="margin-bottom:16px;">
+          <div class="form-group">
+            <label>참여자</label>
+            <select id="pr-name"></select>
+          </div>
+          <div class="form-group">
+            <label>연도/월</label>
+            <input type="month" id="pr-month">
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="printSheet('attendance')">🖨️ 출근부 출력</button>
+          <button class="btn btn-primary" onclick="printSheet('workdiary')">🖨️ 업무일지 출력</button>
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin-top:10px;">※ 버튼 클릭 시 인쇄 창이 열립니다. 브라우저 인쇄 → PDF 저장도 가능합니다.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── 데이터 ──────────────────────────────────────
+const SICK_MAX=10, SICK_NO_DOCS=5;
+
+function gd(k,d=[]){try{return JSON.parse(localStorage.getItem(k))||d;}catch{return d;}}
+function sd(k,v){localStorage.setItem(k,JSON.stringify(v));}
+
+let P  = gd('participants');  // 참여자
+let A  = gd('attendances');   // 근태
+let D  = gd('diaries');       // 업무일지
+let adminCode = localStorage.getItem('adminCode')||'0000';
+
+// 샘플
+if(!P.length){
+  P=[{id:uid(),name:'박주영',type:'장애인일자리',workplace:'사)강원특별자치도 농아인협회',contact:'010-8238-8349',start:'2026-01-13',end:'2026-12-31',hoursPerDay:4,code:'1234'}];
+  A=[
+    {id:uid(),name:'박주영',type:'연가',start:'2026-02-19',end:'2026-02-19',days:1,hours:4,reason:'개인 사정',docs:'없음',status:'승인',applyDate:'2026-02-19'},
+    {id:uid(),name:'박주영',type:'병가',start:'2026-03-06',end:'2026-03-06',days:1,hours:4,reason:'병원 방문',docs:'없음',status:'승인',applyDate:'2026-03-05'},
+    {id:uid(),name:'박주영',type:'연가',start:'2026-05-04',end:'2026-05-04',days:1,hours:4,reason:'개인 사유',docs:'없음',status:'승인',applyDate:'2026-04-04'},
+  ];
+  saveAll();
+}
+
+function saveAll(){sd('participants',P);sd('attendances',A);sd('diaries',D);}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+
+// ── 연가 계산 ────────────────────────────────────
+function calcLeave(p,today=new Date()){
+  const start=new Date(p.start);
+  let gen=0,check=new Date(start);
+  check.setMonth(check.getMonth()+1);
+  while(check<=today){gen++;check.setMonth(check.getMonth()+1);}
+  const annUsed=A.filter(a=>a.name===p.name&&a.type==='연가'&&a.status==='승인').reduce((s,a)=>s+Number(a.days),0);
+  const sickUsed=A.filter(a=>a.name===p.name&&a.type==='병가'&&a.status==='승인').reduce((s,a)=>s+Number(a.days),0);
+  return{
+    generated:gen,annUsed,annLeft:Math.max(0,gen-annUsed),
+    sickUsed,sickLeft:Math.max(0,SICK_MAX-sickUsed),
+    sickNoDocsLeft:Math.max(0,SICK_NO_DOCS-Math.min(sickUsed,SICK_NO_DOCS)),
+    sickDocsNeeded:Math.max(0,sickUsed-SICK_NO_DOCS),
+  };
+}
+
+// ── 로그인 ───────────────────────────────────────
+let currentRole=null,currentUser=null,loginRole='participant';
+
+function setLoginRole(r){
+  loginRole=r;
+  document.querySelectorAll('.role-tab').forEach((t,i)=>t.classList.toggle('active',i===(r==='participant'?0:1)));
+  document.getElementById('nameGroup').style.display=r==='participant'?'block':'none';
+  document.getElementById('loginHint').textContent=r==='admin'?'관리자 코드로 접속합니다.':'이름과 참여자 코드로 접속하세요.';
+  document.getElementById('loginError').textContent='';
+}
+
+function doLogin(){
+  const code=document.getElementById('loginCode').value.trim();
+  const name=document.getElementById('loginName').value.trim();
+  document.getElementById('loginError').textContent='';
+  if(loginRole==='admin'){
+    code===adminCode?enterApp('admin','관리자'):(document.getElementById('loginError').textContent='코드가 올바르지 않습니다.');
+  } else {
+    if(!name){document.getElementById('loginError').textContent='이름을 입력하세요.';return;}
+    const p=P.find(x=>x.name===name&&x.code===code);
+    p?enterApp('participant',p.name):(document.getElementById('loginError').textContent='이름 또는 코드가 올바르지 않습니다.');
+  }
+}
+
+function enterApp(role,userName){
+  currentRole=role;currentUser=userName;
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appScreen').style.display='block';
+  document.getElementById('roleBadge').textContent=role==='admin'?'관리자':'참여자';
+  document.getElementById('roleBadge').className='role-badge '+role;
+  document.getElementById('headerUserName').textContent=userName;
+  document.getElementById('todayBadge').textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});
+  buildTabs();
+  switchTab(role==='admin'?'dashboard':'my-status');
+}
+
+function doLogout(){
+  currentRole=null;currentUser=null;
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('appScreen').style.display='none';
+  ['loginCode','loginName'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('loginError').textContent='';
+}
+
+// ── 탭 ──────────────────────────────────────────
+const ADMIN_TABS=[
+  {id:'dashboard',label:'📊 대시보드'},
+  {id:'participants',label:'👥 참여자 관리'},
+  {id:'attendance',label:'📝 근태 입력'},
+  {id:'admin-diary',label:'📖 업무일지 열람'},
+  {id:'print',label:'🖨️ 양식 출력'},
+  {id:'settings',label:'🔑 권한 관리'},
+];
+const USER_TABS=[
+  {id:'my-status',label:'📊 내 현황'},
+  {id:'diary',label:'📝 업무일지'},
+  {id:'print',label:'🖨️ 양식 출력'},
+];
+
+function buildTabs(){
+  const tabs=currentRole==='admin'?ADMIN_TABS:USER_TABS;
+  document.getElementById('tabBar').innerHTML=tabs.map(t=>`<button class="tab" data-id="${t.id}" onclick="switchTab('${t.id}')">${t.label}</button>`).join('');
+}
+
+function switchTab(id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.id===id));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const pg=document.getElementById('page-'+id);
+  if(pg)pg.classList.add('active');
+  ({
+    'dashboard':renderDashboard,
+    'participants':renderParticipantTable,
+    'attendance':initAttendanceTab,
+    'admin-diary':initAdminDiary,
+    'settings':renderSettings,
+    'my-status':renderMyStatus,
+    'diary':renderDiary,
+    'print':initPrint,
+  }[id]||function(){})();
+}
+
+// ── 관리자: 대시보드 ─────────────────────────────
+function renderDashboard(){
+  const today=new Date();
+  let tAL=0,tSL=0,tAU=0,tSU=0;
+  P.forEach(p=>{const lv=calcLeave(p,today);tAL+=lv.annLeft;tSL+=lv.sickLeft;tAU+=lv.annUsed;tSU+=lv.sickUsed;});
+  document.getElementById('summaryCards').innerHTML=`
+    <div class="stat-card blue"><div class="stat-label">총 참여자</div><div class="stat-value">${P.length}</div><div class="stat-sub">명</div></div>
+    <div class="stat-card green"><div class="stat-label">연가 잔여(전체)</div><div class="stat-value">${tAL}</div><div class="stat-sub">일 · ${tAU}일 사용</div></div>
+    <div class="stat-card purple"><div class="stat-label">병가 잔여(전체)</div><div class="stat-value">${tSL}</div><div class="stat-sub">일 · ${tSU}일 사용</div></div>
+    <div class="stat-card amber"><div class="stat-label">이번달 근태</div><div class="stat-value">${A.filter(a=>{const d=new Date(a.start);return d.getMonth()===today.getMonth()&&d.getFullYear()===today.getFullYear();}).length}</div><div class="stat-sub">건</div></div>
+  `;
+  const list=document.getElementById('participantList');
+  if(!P.length){list.innerHTML=`<div class="empty-state"><div class="icon">👥</div>등록된 참여자가 없습니다.</div>`;return;}
+  list.innerHTML=P.map(p=>{
+    const lv=calcLeave(p,today);
+    const ap=lv.generated?Math.round(lv.annUsed/lv.generated*100):0;
+    const sp=Math.round(lv.sickUsed/SICK_MAX*100);
+    const wc=lv.annLeft===0?'badge-deny':lv.annLeft<=1?'badge-warn':'badge-ok';
+    const wt=lv.annLeft===0?'연가 소진':lv.annLeft<=1?'연가 주의':'정상';
+    return `<div class="p-card">
+      <div class="p-avatar">${p.name[0]}</div>
+      <div class="p-info">
+        <div class="p-name">${p.name} <span class="badge ${wc}" style="margin-left:6px;">${wt}</span></div>
+        <div class="p-sub">${p.workplace||''} · ${p.start} 시작</div>
+        <div style="margin-top:8px;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:3px;"><span>연가 ${lv.annUsed}/${lv.generated}일</span><span>${ap}%</span></div>
+          <div class="prog-wrap"><div class="prog-bar prog-blue" style="width:${ap}%"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px;margin-bottom:3px;"><span>병가 ${lv.sickUsed}/${SICK_MAX}일 · 증빙없이잔여 ${lv.sickNoDocsLeft}일</span><span>${sp}%</span></div>
+          <div class="prog-wrap"><div style="display:flex;height:100%;border-radius:4px;overflow:hidden;">
+            <div style="width:${Math.round(Math.min(lv.sickUsed,5)/SICK_MAX*100)}%;background:var(--sick);"></div>
+            <div style="width:${Math.round(Math.max(0,lv.sickUsed-5)/SICK_MAX*100)}%;background:var(--red);"></div>
+          </div></div>
+        </div>
+      </div>
+      <div class="p-stats">
+        <div class="p-stat"><div class="p-stat-val" style="color:var(--accent)">${lv.annLeft}</div><div class="p-stat-lbl">연가잔여</div></div>
+        <div class="p-stat"><div class="p-stat-val" style="color:var(--sick)">${lv.sickNoDocsLeft}</div><div class="p-stat-lbl">병가무증빙</div></div>
+        <div class="p-stat"><div class="p-stat-val" style="color:var(--green)">${lv.generated}</div><div class="p-stat-lbl">연가발생</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── 관리자: 참여자 관리 ──────────────────────────
+function addParticipant(){
+  const name=document.getElementById('p-name').value.trim();
+  const start=document.getElementById('p-start').value;
+  const code=document.getElementById('p-code').value.trim();
+  if(!name||!start||!code){showToast('성명, 시작일, 접속코드를 입력하세요.');return;}
+  if(P.find(p=>p.name===name)){showToast('이미 등록된 참여자입니다.');return;}
+  P.push({id:uid(),name,type:document.getElementById('p-type').value,workplace:document.getElementById('p-workplace').value,contact:document.getElementById('p-contact').value,start,end:document.getElementById('p-end').value,hoursPerDay:Number(document.getElementById('p-hours').value),code});
+  saveAll();renderParticipantTable();showToast(`${name} 추가 완료`);
+  ['p-name','p-workplace','p-contact','p-start','p-code'].forEach(id=>document.getElementById(id).value='');
+}
+
+function renderParticipantTable(){
+  const today=new Date(),body=document.getElementById('pTableBody');
+  if(!P.length){body.innerHTML=`<tr><td colspan="12" style="text-align:center;color:var(--muted);padding:24px;">없음</td></tr>`;return;}
+  body.innerHTML=P.map(p=>{
+    const lv=calcLeave(p,today);
+    return `<tr>
+      <td><strong>${p.name}</strong></td><td>${p.type}</td>
+      <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.workplace||'-'}</td>
+      <td>${p.start}</td><td>${lv.generated}</td><td>${lv.annUsed}</td>
+      <td><span class="badge ${lv.annLeft===0?'badge-deny':lv.annLeft<=1?'badge-warn':'badge-ok'}">${lv.annLeft}일</span></td>
+      <td>${lv.sickUsed}</td>
+      <td><span class="badge ${lv.sickLeft<=2?'badge-warn':'badge-ok'}">${lv.sickLeft}일</span></td>
+      <td><span class="badge ${lv.sickNoDocsLeft===0?'badge-deny':lv.sickNoDocsLeft<=1?'badge-warn':'badge-ok'}">${lv.sickNoDocsLeft}일</span></td>
+      <td style="white-space:nowrap;">
+        <span style="font-family:'IBM Plex Mono';color:var(--accent);">${p.code}</span>
+        <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;margin-left:4px;" onclick="chgPCode('${p.id}')">변경</button>
+      </td>
+      <td><button class="btn btn-danger" style="padding:3px 8px;font-size:12px;" onclick="delP('${p.id}')">삭제</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function chgPCode(id){
+  const c=prompt('새 접속 코드:');if(!c)return;
+  P=P.map(p=>p.id===id?{...p,code:c.trim()}:p);
+  saveAll();renderParticipantTable();renderSettings();showToast('코드 변경 완료');
+}
+function delP(id){
+  if(!confirm('삭제하면 관련 근태·업무일지도 함께 삭제됩니다.'))return;
+  const p=P.find(x=>x.id===id);
+  P=P.filter(x=>x.id!==id);A=A.filter(a=>a.name!==p.name);D=D.filter(d=>d.name!==p.name);
+  saveAll();renderParticipantTable();showToast('삭제 완료');
+}
+
+// ── 관리자: 근태 입력 ────────────────────────────
+function initAttendanceTab(){
+  const sel=document.getElementById('a-name');
+  sel.innerHTML=P.map(p=>`<option>${p.name}</option>`).join('');
+  const rfn=document.getElementById('rf-name');
+  rfn.innerHTML='<option value="">전체 참여자</option>'+P.map(p=>`<option>${p.name}</option>`).join('');
+  updateLeaveWarning();renderAdminRecords();
+}
+
+function updateLeaveWarning(){
+  const name=document.getElementById('a-name')?.value;
+  const type=document.getElementById('a-type')?.value;
+  const p=P.find(x=>x.name===name);
+  const w=document.getElementById('leaveWarning');
+  if(!p||!w)return;
+  const lv=calcLeave(p,new Date());
+  if(type==='연가'&&lv.annLeft===0){
+    w.style.display='block';w.innerHTML=`<div style="background:var(--amber-light);border:1px solid #fcd34d;border-radius:7px;padding:10px 14px;color:var(--amber);font-size:12px;">⚠️ 연가 잔여일수 없음 — 당겨쓰기 여부를 확인하세요.</div>`;
+  } else if(type==='병가'&&lv.sickUsed>=SICK_MAX){
+    w.style.display='block';w.innerHTML=`<div style="background:var(--red-light);border:1px solid #fca5a5;border-radius:7px;padding:10px 14px;color:var(--red);font-size:12px;">🚫 병가 최대 10일 모두 사용</div>`;
+  } else if(type==='병가'&&lv.sickNoDocsLeft===0){
+    w.style.display='block';w.innerHTML=`<div style="background:var(--amber-light);border:1px solid #fcd34d;border-radius:7px;padding:10px 14px;color:var(--amber);font-size:12px;">⚠️ 증빙없이 쓸 수 있는 병가 5일 소진 — <strong>진단서·소견서 등 증빙 필요</strong> (잔여 ${lv.sickLeft}일)</div>`;
+  } else if(type==='병가'&&lv.sickNoDocsLeft===1){
+    w.style.display='block';w.innerHTML=`<div style="background:var(--accent-light);border:1px solid #93c5fd;border-radius:7px;padding:10px 14px;color:var(--accent);font-size:12px;">ℹ️ 증빙없이 쓸 수 있는 병가 1일 남음 — 다음 사용 시 증빙 필요</div>`;
+  } else {w.style.display='none';}
+}
+
+function addAttendance(){
+  const name=document.getElementById('a-name').value;
+  const type=document.getElementById('a-type').value;
+  const start=document.getElementById('a-start').value;
+  const end=document.getElementById('a-end').value;
+  if(!name||!start||!end){showToast('필수 항목을 입력하세요.');return;}
+  const p=P.find(x=>x.name===name);
+  if(type==='병가'&&calcLeave(p,new Date()).sickUsed>=SICK_MAX){showToast('병가 최대 10일 초과');return;}
+  A.push({id:uid(),name,type,start,end,days:Number(document.getElementById('a-days').value)||1,hours:Number(document.getElementById('a-hours').value)||4,reason:document.getElementById('a-reason').value,docs:document.getElementById('a-docs').value||'없음',status:document.getElementById('a-status').value,applyDate:new Date().toISOString().slice(0,10)});
+  saveAll();updateLeaveWarning();renderAdminRecords();showToast(`${name}의 ${type} 저장 완료`);
+}
+
+function resetAForm(){
+  ['a-start','a-end','a-reason','a-docs'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('a-days').value=1;document.getElementById('a-hours').value=4;
+  document.getElementById('leaveWarning').style.display='none';
+}
+
+function renderAdminRecords(){
+  const fn=document.getElementById('rf-name')?.value||'';
+  const ft=document.getElementById('rf-type')?.value||'';
+  const data=A.filter(a=>(!fn||a.name===fn)&&(!ft||a.type===ft)).sort((a,b)=>b.start.localeCompare(a.start));
+  const bc={'연가':'badge-annual','병가':'badge-sick','공가':'badge-public','특별휴가':'badge-special'};
+  const sc={'승인':'badge-ok','검토중':'badge-review','반려':'badge-deny'};
+  const body=document.getElementById('adminRecordBody');
+  if(!data.length){body.innerHTML=`<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:24px;">기록 없음</td></tr>`;return;}
+  body.innerHTML=data.map(a=>`<tr>
+    <td><strong>${a.name}</strong></td>
+    <td><span class="badge ${bc[a.type]||''}">${a.type}</span></td>
+    <td>${a.start}</td><td>${a.end}</td><td>${a.days}일</td><td>${a.hours}h</td>
+    <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${a.reason||'-'}</td>
+    <td><select style="font-size:12px;padding:3px 6px;" onchange="chgStatus('${a.id}',this.value)">
+      ${['승인','검토중','반려'].map(s=>`<option ${a.status===s?'selected':''}>${s}</option>`).join('')}
+    </select></td>
+    <td><button class="btn btn-danger" style="padding:3px 8px;font-size:11px;" onclick="delA('${a.id}')">삭제</button></td>
+  </tr>`).join('');
+}
+
+function chgStatus(id,val){A=A.map(a=>a.id===id?{...a,status:val}:a);saveAll();showToast('상태 변경 완료');}
+function delA(id){if(!confirm('삭제?'))return;A=A.filter(a=>a.id!==id);saveAll();renderAdminRecords();showToast('삭제됨');}
+
+// ── 관리자: 업무일지 열람 ────────────────────────
+function initAdminDiary(){
+  const sel=document.getElementById('adf-name');
+  sel.innerHTML='<option value="">전체 참여자</option>'+P.map(p=>`<option>${p.name}</option>`).join('');
+  if(!document.getElementById('adf-month').value)
+    document.getElementById('adf-month').value=new Date().toISOString().slice(0,7);
+  renderAdminDiary();
+}
+
+function renderAdminDiary(){
+  const fn=document.getElementById('adf-name')?.value||'';
+  const fm=document.getElementById('adf-month')?.value||'';
+  const data=D.filter(d=>(!fn||d.name===fn)&&(!fm||d.date.startsWith(fm))).sort((a,b)=>b.date.localeCompare(a.date));
+  const el=document.getElementById('adminDiaryList');
+  if(!data.length){el.innerHTML=`<div class="empty-state"><div class="icon">📝</div>작성된 업무일지가 없습니다.</div>`;return;}
+  el.innerHTML=data.map(d=>`
+    <div class="diary-entry">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="p-avatar" style="width:28px;height:28px;font-size:11px;">${d.name[0]}</div>
+          <strong style="font-size:13px;">${d.name}</strong>
+        </div>
+        <div class="diary-entry-date">${d.date} ${new Date(d.date).toLocaleDateString('ko-KR',{weekday:'short'})}</div>
+      </div>
+      <div class="diary-entry-content">${esc(d.content)}</div>
+    </div>
+  `).join('');
+}
+
+// ── 관리자: 권한 관리 ────────────────────────────
+function renderSettings(){
+  const list=document.getElementById('codeList');
+  if(!P.length){list.innerHTML=`<div style="color:var(--muted);font-size:13px;">등록된 참여자가 없습니다.</div>`;return;}
+  list.innerHTML=P.map(p=>`
+    <div class="code-item">
+      <div><div style="font-size:13px;font-weight:500;">${p.name}</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">${p.workplace||''}</div></div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="code-value">${p.code}</div>
+        <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px;" onclick="chgPCode('${p.id}')">변경</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function changeAdminCode(){
+  const cur=document.getElementById('cur-admin-code').value;
+  const nw=document.getElementById('new-admin-code').value;
+  if(cur!==adminCode){showToast('현재 코드가 올바르지 않습니다.');return;}
+  if(nw.length<4){showToast('새 코드는 4자리 이상이어야 합니다.');return;}
+  adminCode=nw;localStorage.setItem('adminCode',adminCode);
+  ['cur-admin-code','new-admin-code'].forEach(id=>document.getElementById(id).value='');
+  showToast('관리자 코드 변경 완료');
+}
+
+// ── 참여자: 내 현황 ──────────────────────────────
+function renderMyStatus(){
+  const p=P.find(x=>x.name===currentUser);
+  if(!p){document.getElementById('myLeaveGrid').innerHTML='<div style="color:var(--muted);">정보를 찾을 수 없습니다.</div>';return;}
+  const today=new Date(),lv=calcLeave(p,today);
+  const ap=lv.generated?Math.min(100,Math.round(lv.annUsed/lv.generated*100)):0;
+  const sp=Math.min(100,Math.round(lv.sickUsed/SICK_MAX*100));
+  document.getElementById('myLeaveGrid').innerHTML=`
+    <div class="leave-block">
+      <div class="leave-block-title">연가 현황</div>
+      <div class="leave-num" style="color:var(--accent)">${lv.annLeft}<span style="font-size:16px;font-weight:400;">일</span></div>
+      <div class="leave-sub">잔여 · 발생 ${lv.generated}일 · 사용 ${lv.annUsed}일</div>
+      <div class="prog-wrap" style="margin-top:10px;"><div class="prog-bar prog-blue" style="width:${ap}%"></div></div>
+    </div>
+    <div class="leave-block">
+      <div class="leave-block-title">병가 현황</div>
+      <div class="leave-num" style="color:var(--sick)">${lv.sickLeft}<span style="font-size:16px;font-weight:400;">일</span></div>
+      <div class="leave-sub">잔여 · 사용 ${lv.sickUsed}일 / 최대 ${SICK_MAX}일</div>
+      <div style="font-size:11px;margin-top:6px;${lv.sickNoDocsLeft===0?'color:var(--red);font-weight:500;':'color:var(--muted);'}">증빙없이 쓸 수 있는 잔여: ${lv.sickNoDocsLeft}일</div>
+      <div class="prog-wrap" style="margin-top:6px;"><div style="display:flex;height:100%;border-radius:4px;overflow:hidden;">
+        <div style="width:${Math.round(Math.min(lv.sickUsed,5)/SICK_MAX*100)}%;background:var(--sick);"></div>
+        <div style="width:${Math.round(Math.max(0,lv.sickUsed-5)/SICK_MAX*100)}%;background:var(--red);"></div>
+      </div></div>
+    </div>
+  `;
+
+  // 타임라인
+  const start=new Date(p.start);
+  let html='',check=new Date(start),idx=0;
+  check.setMonth(check.getMonth()+1);
+  while(check<=new Date('2026-12-31')){
+    idx++;
+    const isFuture=check>today;
+    const dotColor=isFuture?'var(--border)':(idx<=lv.annUsed?'var(--green)':'var(--accent)');
+    html+=`<div style="display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:12px;${isFuture?'opacity:.45':''}">
+      <div style="width:6px;height:6px;border-radius:50%;background:${dotColor};"></div>
+      <span>${check.toLocaleDateString('ko-KR',{month:'short',day:'numeric'})} 발생</span>
+      ${(!isFuture&&idx<=lv.annUsed)?'<span style="font-size:10px;color:var(--green);">✓사용</span>':''}
+    </div>`;
+    check.setMonth(check.getMonth()+1);
+  }
+  document.getElementById('myTimeline').innerHTML=html||'<span style="color:var(--muted);font-size:12px;">아직 연가가 발생하지 않았습니다.</span>';
+
+  const myRec=A.filter(a=>a.name===currentUser).sort((a,b)=>b.start.localeCompare(a.start));
+  const bc={'연가':'badge-annual','병가':'badge-sick','공가':'badge-public','특별휴가':'badge-special'};
+  const sc={'승인':'badge-ok','검토중':'badge-review','반려':'badge-deny'};
+  const body=document.getElementById('myRecordBody');
+  if(!myRec.length){body.innerHTML=`<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px;">기록 없음</td></tr>`;return;}
+  body.innerHTML=myRec.map(a=>`<tr>
+    <td><span class="badge ${bc[a.type]||''}">${a.type}</span></td>
+    <td>${a.start}</td><td>${a.end}</td><td>${a.days}일</td>
+    <td>${a.reason||'-'}</td><td><span class="badge ${sc[a.status]||''}">${a.status}</span></td>
+  </tr>`).join('');
+}
+
+// ── 참여자: 업무일지 ────────────────────────────
+let diaryDate=new Date();
+
+function setDiaryDate(d){
+  diaryDate=new Date(d);
+  const el=document.getElementById('diaryDateDisplay');
+  if(el)el.textContent=diaryDate.toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
+  const dateStr=diaryDate.toISOString().slice(0,10);
+  const existing=D.find(d=>d.name===currentUser&&d.date===dateStr);
+  const inp=document.getElementById('diaryInput');
+  if(inp)inp.value=existing?existing.content:'';
+  renderDiary();
+}
+
+function moveDiaryDate(delta){diaryDate.setDate(diaryDate.getDate()+delta);setDiaryDate(diaryDate);}
+
+function saveDiary(){
+  const dateStr=diaryDate.toISOString().slice(0,10);
+  const content=document.getElementById('diaryInput').value.trim();
+  if(!content){showToast('내용을 입력하세요.');return;}
+  const idx=D.findIndex(d=>d.name===currentUser&&d.date===dateStr);
+  const entry={id:idx>=0?D[idx].id:uid(),name:currentUser,date:dateStr,content,updatedAt:new Date().toISOString()};
+  idx>=0?D[idx]=entry:D.push(entry);
+  saveAll();renderDiary();showToast('저장되었습니다.');
+}
+
+function delDiary(id){
+  if(!confirm('삭제?'))return;
+  D=D.filter(d=>d.id!==id);
+  const dateStr=diaryDate.toISOString().slice(0,10);
+  const inp=document.getElementById('diaryInput');
+  if(inp&&!D.find(d=>d.name===currentUser&&d.date===dateStr))inp.value='';
+  saveAll();renderDiary();showToast('삭제됨');
+}
+
+function editDiary(date){
+  setDiaryDate(new Date(date));
+  document.getElementById('diaryInput')?.focus();
+}
+
+function renderDiary(){
+  const page=document.getElementById('page-diary');
+  if(!page||!page.classList.contains('active'))return;
+  const list=document.getElementById('diaryList');
+  if(!list)return;
+  // 날짜 초기화
+  if(!document.getElementById('diaryDateDisplay').textContent) setDiaryDate(diaryDate);
+
+  const myD=D.filter(d=>d.name===currentUser).sort((a,b)=>b.date.localeCompare(a.date));
+  if(!myD.length){list.innerHTML=`<div class="empty-state"><div class="icon">📝</div>작성된 업무일지가 없습니다.<br>위에서 오늘의 업무를 기록해보세요.</div>`;return;}
+  list.innerHTML=myD.map(d=>`
+    <div class="diary-entry">
+      <div class="diary-entry-date">${d.date} ${new Date(d.date).toLocaleDateString('ko-KR',{weekday:'short'})}</div>
+      <div class="diary-entry-content">${esc(d.content)}</div>
+      <div class="diary-actions">
+        <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px;" onclick="editDiary('${d.date}')">수정</button>
+        <button class="btn btn-danger" style="font-size:12px;padding:4px 10px;" onclick="delDiary('${d.id}')">삭제</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── CSV ──────────────────────────────────────────
+function exportCSV(){
+  const h=['성명','근태종류','시작일','종료일','일수','시간','사유','증빙','처리상태','신청일'];
+  const r=A.map(a=>[a.name,a.type,a.start,a.end,a.days,a.hours,a.reason,a.docs,a.status,a.applyDate]);
+  const csv=[h,...r].map(row=>row.map(v=>`"${v}"`).join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='근태기록_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();URL.revokeObjectURL(url);
+}
+
+// ── 양식 출력 ────────────────────────────────────
+function initPrint(){
+  const sel=document.getElementById('pr-name');
+  if(currentRole==='admin'){
+    sel.innerHTML=P.map(p=>`<option>${p.name}</option>`).join('');
+  } else {
+    sel.innerHTML=`<option>${currentUser}</option>`;
+    sel.disabled=true;
+  }
+  if(!document.getElementById('pr-month').value)
+    document.getElementById('pr-month').value=new Date().toISOString().slice(0,7);
+}
+
+function printSheet(type){
+  const name=document.getElementById('pr-name').value;
+  const monthVal=document.getElementById('pr-month').value;
+  if(!name||!monthVal){showToast('참여자와 월을 선택하세요.');return;}
+  const p=P.find(x=>x.name===name);
+  const [year,month]=monthVal.split('-').map(Number);
+  const html=type==='attendance'?buildAttendanceSheet(p,year,month):buildWorkDiarySheet(p,year,month);
+  const win=window.open('','_blank','width=900,height=1200');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>win.print(),600);
+}
+
+function buildAttendanceSheet(p,year,month){
+  const firstDay=new Date(year,month-1,1);
+  const lastDay=new Date(year,month,0).getDate();
+  const DOW=['일','월','화','수','목','금','토'];
+
+  // 이번 달 근태 맵 { 'YYYY-MM-DD': type }
+  const attMap={};
+  A.filter(a=>a.name===p.name&&a.status==='승인').forEach(a=>{
+    let cur=new Date(a.start);
+    const end=new Date(a.end);
+    while(cur<=end){
+      attMap[cur.toISOString().slice(0,10)]=a.type;
+      cur.setDate(cur.getDate()+1);
+    }
+  });
+
+  // 주 단위로 날짜 그룹
+  const weeks=[];
+  let week=[];
+  // 첫 주 앞 빈칸
+  for(let i=0;i<firstDay.getDay();i++) week.push(null);
+  for(let d=1;d<=lastDay;d++){
+    week.push(d);
+    if(week.length===7){weeks.push(week);week=[];}
+  }
+  if(week.length) weeks.push(week);
+
+  const weekRows=weeks.map(w=>{
+    const dayRow=w.map(d=>{
+      if(!d) return '<td></td><td></td>';
+      const date=`${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const dow=new Date(date).getDay();
+      const isWeekend=dow===0||dow===6;
+      const att=attMap[date]||'';
+      const color=dow===0?'color:red':dow===6?'color:blue':'';
+      let cell='';
+      if(isWeekend) cell=`<td style="${color};text-align:center;font-size:11px;">${d}</td><td style="text-align:center;font-size:10px;color:red;">휴일</td>`;
+      else if(att) cell=`<td style="text-align:center;font-size:11px;">${d}</td><td style="text-align:center;font-size:11px;color:${att==='연가'?'blue':att==='병가'?'red':'green'};">${att}</td>`;
+      else cell=`<td style="text-align:center;font-size:11px;">${d}</td><td></td>`;
+      return cell;
+    }).join('');
+    return `
+      <tr><td style="font-size:10px;color:#888;">요일</td>${w.map(d=>{if(!d)return'<td></td>';const dow=new Date(year,month-1,d).getDay();const c=dow===0?'color:red':dow===6?'color:blue':'';return`<td style="text-align:center;font-size:11px;${c}">${DOW[dow]}</td>`}).join('')}</tr>
+      <tr><td style="font-size:10px;color:#888;">일자</td>${w.map(d=>{if(!d)return'<td></td>';const dow=new Date(year,month-1,d).getDay();const isWe=dow===0||dow===6;const att=attMap[`${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`]||'';const c=dow===0?'color:red':dow===6?'color:blue':'';return`<td style="text-align:center;font-size:11px;${c}">${d}</td>`}).join('')}</tr>
+      <tr><td style="font-size:10px;color:#888;">출근자</td>${w.map(d=>{if(!d)return'<td></td>';const dow=new Date(year,month-1,d).getDay();const isWe=dow===0||dow===6;const att=attMap[`${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`]||'';if(isWe)return'<td style="text-align:center;font-size:10px;color:red;">휴일</td>';if(att)return`<td style="text-align:center;font-size:10px;color:blue;">${att}</td>`;return'<td></td>';}).join('')}</tr>
+      <tr><td style="font-size:10px;color:#888;">확인자</td>${w.map(d=>d?'<td></td>':'<td></td>').join('')}</tr>
+    `;
+  }).join('<tr style="height:6px;"><td colspan="8"></td></tr>');
+
+  return `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">
+  <style>
+    @page{size:A4 portrait;margin:15mm;}
+    body{font-family:'Malgun Gothic','맑은 고딕',sans-serif;font-size:12px;}
+    h2{text-align:center;font-size:16px;margin-bottom:8px;}
+    .info{display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px;}
+    table{width:100%;border-collapse:collapse;margin-bottom:8px;}
+    td,th{border:1px solid #333;padding:5px 4px;min-height:28px;height:28px;}
+    .week-table td{width:13%;}
+    .label-td{width:10%;background:#f5f5f5;font-size:11px;text-align:center;}
+  </style></head><body>
+  <h2>2026년 장애인일자리사업 ${month}월 출근부</h2>
+  <div class="info">
+    <span>소속: ${p.workplace||''}</span>
+    <span>성명: ${p.name}</span>
+  </div>
+  <table>
+    <colgroup><col style="width:10%"><col style="width:13%"><col style="width:13%"><col style="width:13%"><col style="width:13%"><col style="width:13%"><col style="width:13%"><col style="width:12%"></colgroup>
+    <thead><tr style="background:#eee;"><td></td><th>일</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th style="color:blue;">토</th></tr></thead>
+    <tbody>${weekRows}</tbody>
+  </table>
+  <div style="margin-top:20px;font-size:11px;text-align:right;">참여자 서명: ________________________</div>
+  </body></html>`;
+}
+
+function buildWorkDiarySheet(p,year,month){
+  const lastDay=new Date(year,month,0).getDate();
+  const DOW=['일','월','화','수','목','금','토'];
+
+  // 근태 맵
+  const attMap={};
+  A.filter(a=>a.name===p.name&&a.status==='승인').forEach(a=>{
+    let cur=new Date(a.start);const end=new Date(a.end);
+    while(cur<=end){attMap[cur.toISOString().slice(0,10)]=a.type;cur.setDate(cur.getDate()+1);}
+  });
+  // 업무일지 맵
+  const dMap={};
+  D.filter(d=>d.name===p.name&&d.date.startsWith(`${year}-${String(month).padStart(2,'0')}`))
+    .forEach(d=>dMap[d.date]=d.content);
+
+  const rows=Array.from({length:lastDay},(_,i)=>{
+    const d=i+1;
+    const date=`${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow=new Date(date).getDay();
+    const isWe=dow===0||dow===6;
+    const att=attMap[date]||'';
+    const diary=dMap[date]||'';
+    const dowStr=DOW[dow];
+    const color=dow===0?'color:red':dow===6?'color:blue':'';
+    if(isWe) return `<tr style="background:#fff0f0;">
+      <td style="text-align:center;">${d}</td>
+      <td style="text-align:center;${color}">${dowStr}</td>
+      <td style="text-align:center;color:red;">휴일</td>
+      <td style="text-align:center;color:red;">휴일</td>
+      <td style="text-align:center;color:red;">휴일</td>
+      <td style="text-align:center;color:red;">휴일</td>
+    </tr>`;
+    if(att) return `<tr>
+      <td style="text-align:center;">${d}</td>
+      <td style="text-align:center;">${dowStr}</td>
+      <td style="text-align:center;color:blue;">${att}</td>
+      <td style="text-align:center;color:blue;">${att}</td>
+      <td style="text-align:center;"></td>
+      <td style="text-align:center;"></td>
+    </tr>`;
+    return `<tr>
+      <td style="text-align:center;">${d}</td>
+      <td style="text-align:center;">${dowStr}</td>
+      <td style="font-size:11px;padding:3px 5px;">${diary.replace(/\n/g,'<br>')}</td>
+      <td style="text-align:center;font-size:11px;">${p.hoursPerDay===4?'09:00~13:00':p.hoursPerDay===5?'09:00~14:00':'09:00~18:00'}</td>
+      <td></td>
+      <td></td>
+    </tr>`;
+  }).join('');
+
+  return `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">
+  <style>
+    @page{size:A4 portrait;margin:15mm;}
+    body{font-family:'Malgun Gothic','맑은 고딕',sans-serif;font-size:12px;}
+    h2{text-align:center;font-size:15px;margin-bottom:8px;}
+    .info-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;border:1px solid #333;margin-bottom:4px;}
+    .info-cell{border:1px solid #333;padding:4px 8px;font-size:11px;}
+    .info-label{background:#eee;font-weight:bold;}
+    table{width:100%;border-collapse:collapse;}
+    td,th{border:1px solid #333;padding:5px 4px;height:26px;}
+    th{background:#eee;text-align:center;font-size:11px;}
+  </style></head><body>
+  <h2>2026년 장애인일자리사업 ${month}월 업무일지</h2>
+  <div class="info-grid">
+    <div class="info-cell info-label">장애인일자리 사업유형</div><div class="info-cell">${p.type}</div>
+    <div class="info-cell info-label">배치기관</div><div class="info-cell">${p.workplace||''}</div>
+    <div class="info-cell info-label">직무명</div><div class="info-cell"></div>
+    <div class="info-cell info-label">참여자성명</div><div class="info-cell">${p.name}</div>
+  </div>
+  <table>
+    <thead><tr>
+      <th style="width:8%;">일자</th>
+      <th style="width:7%;">요일</th>
+      <th style="width:40%;">업무 내용</th>
+      <th style="width:18%;">근무시간</th>
+      <th style="width:13%;">참여자</th>
+      <th style="width:14%;">확인자</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  </body></html>`;
+}
+
+{return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+
+// 초기화
+setLoginRole('participant');
+setDiaryDate(new Date());
+</script>
+</body>
+</html>
